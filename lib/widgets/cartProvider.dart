@@ -6,9 +6,14 @@ import 'package:http/http.dart' as http;
 class CartProvider with ChangeNotifier {
   Map<String, Map<String, dynamic>> _itemDetails = {};
   Map<String, int> _items = {};
-
+  String _remarks = "";
+  String get remarks => _remarks;
   Map<String, int> get items => _items;
   Map<String, Map<String, dynamic>> get itemDetails => _itemDetails;
+  void setRemarks(String newRemarks){
+    _remarks = newRemarks;
+    notifyListeners();
+  }
 
   void addItem(dynamic item) {
     String itemName = item['name'];
@@ -76,7 +81,7 @@ class CartProvider with ChangeNotifier {
     return null; // No existing order found
   }
 
-  Future<void> submitOrder(String uniqueOrderId, String tableNumber, String? memberId, BuildContext context, bool isFirst) async {
+  Future<void> submitOrder(String uniqueOrderId, String tableNumber, String? memberId, BuildContext context, bool isFirst , String? remarks) async {
     if(isFirst){
       final String url = 'http://${AppConstants.apiBaseUrl}:3000/orders/create-order';
 
@@ -97,6 +102,7 @@ class CartProvider with ChangeNotifier {
         'tableNumber': tableNumber,
         'member_id': memberId,
         'items': items,
+        'remarks' : remarks
       };
 
       try {
@@ -149,6 +155,7 @@ class CartProvider with ChangeNotifier {
       final updateData = {
         'member_id': memberId,
         'items': items,
+        'remarks' : remarks,
       };
 
       try {

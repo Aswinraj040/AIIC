@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../Constants.dart';
-
+import 'edit_menu_item_screen.dart';
 
 const Color primaryColor = Color(0xFF1b285b);
 const Color unavailableColor = Colors.red;
+const Color specialColor = Color(0xFFFFD700); // Golden color for Today's Special
+const Color popularColor = Color(0xFF8A2BE2); // Violet color for Popular Items
 
 class UpdateMenuScreen extends StatefulWidget {
   const UpdateMenuScreen({Key? key}) : super(key: key);
@@ -20,11 +22,11 @@ class _UpdateMenuScreenState extends State<UpdateMenuScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchMenuItems();
+    _fetchMenuItemsWithStatus();
   }
 
-  Future<void> _fetchMenuItems() async {
-    var url = Uri.parse('http://${AppConstants.apiBaseUrl}:3000/menuitems');
+  Future<void> _fetchMenuItemsWithStatus() async {
+    var url = Uri.parse('http://${AppConstants.apiBaseUrl}:3000/menu-items-status');
     var response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -50,6 +52,7 @@ class _UpdateMenuScreenState extends State<UpdateMenuScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Menu item updated successfully")),
       );
+      _fetchMenuItemsWithStatus(); // Refresh the list after update
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Failed to update menu item")),
@@ -65,12 +68,75 @@ class _UpdateMenuScreenState extends State<UpdateMenuScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Menu item deleted successfully")),
       );
-      _fetchMenuItems(); // Refresh the list after deletion
+      _fetchMenuItemsWithStatus(); // Refresh the list after deletion
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Failed to delete menu item")),
       );
     }
+  }
+
+  Future<void> _toggleSpecial(String name) async {
+    var url = Uri.parse('http://${AppConstants.apiBaseUrl}:3000/todays-special');
+    try {
+      var response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({'name': name}),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(jsonDecode(response.body)['message'])),
+        );
+        _fetchMenuItemsWithStatus(); // Refresh the list
+      } else {
+        throw Exception('Failed to toggle Today\'s Special: ${response.body}');
+      }
+    } catch (error) {
+      print('Error toggling Today\'s Special: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to toggle Today's Special: $error")),
+      );
+    }
+  }
+
+  Future<void> _togglePopular(String name) async {
+    var url = Uri.parse('http://${AppConstants.apiBaseUrl}:3000/toggle-popular');
+    try {
+      var response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({'name': name}),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(jsonDecode(response.body)['message'])),
+        );
+        _fetchMenuItemsWithStatus(); // Refresh the list
+      } else {
+        throw Exception('Failed to toggle Popular Item: ${response.body}');
+      }
+    } catch (error) {
+      print('Error toggling Popular Item: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to toggle Popular Item: $error")),
+      );
+    }
+  }
+
+  void _editMenuItem(Map<String, dynamic> menuItem) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditMenuItemScreen(menuItem: menuItem),
+      ),
+    ).then((value) {
+      if (value == true) {
+        _fetchMenuItemsWithStatus(); // Refresh the list after saving changes
+      }
+    });
   }
 
   void _confirmDeleteMenuItem(String name) {
@@ -106,9 +172,14 @@ class _UpdateMenuScreenState extends State<UpdateMenuScreen> {
       itemCount: _menuItems.length,
       itemBuilder: (context, index) {
         var menuItem = _menuItems[index];
-        bool isAvailable = menuItem['available'] ?? true; // Fetching availability status
+        bool isAvailable = menuItem['available'] ?? true;
+        bool isSpecial = menuItem['isTodaySpecial'] ?? false;
+        bool isPopular = menuItem['isPopular'] ?? false;
+
         return Container(
-          color: isAvailable ? Colors.white : unavailableColor.withOpacity(0.2),
+          color: isSpecial
+              ? specialColor.withOpacity(0.2)
+              : (isAvailable ? Colors.white : unavailableColor.withOpacity(0.2)),
           child: ListTile(
             leading: menuItem['image_path'] != null
                 ? Image.network(
@@ -118,36 +189,77 @@ class _UpdateMenuScreenState extends State<UpdateMenuScreen> {
               fit: BoxFit.cover,
             )
                 : null,
-            title: Text(menuItem['name']),
+            title: Row(
+              children: [
+                Text(menuItem['name']),
+                if (isPopular) // Show a star icon for popular items
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Icon(
+                      Icons.star,
+                      color: popularColor,
+                      size: 20,
+                    ),
+                  ),
+              ],
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(menuItem['description']),
                 Text('₹${menuItem['price']}'),
+                Row(
+                  children: [
+                    Text("Available: "),
+                    Switch(
+                      value: isAvailable,
+                      onChanged: (value) {
+                        _updateMenuItem(menuItem['name'], value);
+                      },
+                      activeColor: primaryColor,
+                      inactiveThumbColor: unavailableColor,
+                      inactiveTrackColor: unavailableColor.withOpacity(0.5),
+                    ),
+                  ],
+                ),
               ],
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Switch(
-                  value: isAvailable,
-                  onChanged: (value) {
-                    setState(() {
-                      _menuItems[index]['available'] = value; // Locally update the UI
-                    });
-                    _updateMenuItem(menuItem['name'], value); // Update on the server
-                  },
-                  activeColor: primaryColor,
-                  inactiveThumbColor: unavailableColor,
-                  inactiveTrackColor: unavailableColor.withOpacity(0.5),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () {
-                    _confirmDeleteMenuItem(menuItem['name']); // Show confirmation dialog
-                  },
-                ),
-              ],
+            trailing: PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'edit') {
+                  _editMenuItem(menuItem);
+                } else if (value == 'delete') {
+                  _confirmDeleteMenuItem(menuItem['name']);
+                } else if (value == 'togglePopular') {
+                  _togglePopular(menuItem['name']);
+                } else if (value == 'toggleSpecial') {
+                  _toggleSpecial(menuItem['name']);
+                }
+              },
+              itemBuilder: (context) {
+                return [
+                  PopupMenuItem<String>(
+                    value: 'togglePopular',
+                    child: Text(
+                      isPopular ? 'Remove from Popular' : 'Add to Popular',
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'toggleSpecial',
+                    child: Text(
+                      isSpecial ? 'Remove from Today\'s Special' : 'Add to Today\'s Special',
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'edit',
+                    child: Text('Edit'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Text('Delete'),
+                  ),
+                ];
+              },
             ),
           ),
         );

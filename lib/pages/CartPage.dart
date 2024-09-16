@@ -14,10 +14,12 @@ import '../Constants.dart';
 bool isFirst = true;
 
 class CartPage extends StatelessWidget {
+  final TextEditingController _remarkController = TextEditingController();
   @override
   Widget build(BuildContext context) {
-    final cartProvider = Provider.of<CartProvider>(context);
+    final cartProvider = Provider.of<CartProvider>(context , listen: false);
     final items = cartProvider.items.keys.toList();
+    _remarkController.text = cartProvider.remarks;
 
     return WillPopScope(
       onWillPop: () async {
@@ -171,6 +173,31 @@ class CartPage extends StatelessWidget {
                           ),
                         ),
                       ),
+                    Padding(
+                      padding: EdgeInsets.only(top: 20, bottom: 10, left: 10),
+                      child: Text(
+                        "Remarks (optional)",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 25,
+                          color: Color(0xFF1B285B),
+                        ),
+                      ),
+                    ),
+                    // Remark TextBox
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: TextField(
+                        controller: _remarkController,
+                        onChanged: (value){
+                          cartProvider.setRemarks(value);
+                        },
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Enter any additional requests or remarks',
+                        ),
+                      ),
+                    ),
                     // Payment Details Section
                     Padding(
                       padding: EdgeInsets.only(top: 20, bottom: 10, left: 10),
@@ -264,10 +291,11 @@ class CartPage extends StatelessWidget {
                                 final random = Random();
                                 final uniqueOrderId = 'ORDER${random.nextInt(1000000).toString().padLeft(6, '0')}'; // Generate a random order ID
                                 final tableNumber = (random.nextInt(20) + 1).toString(); // Random table number between 1 and 20
-                                final memberId = html.window.localStorage['membid']; // Retrieve member ID
+                                final memberId = html.window.localStorage['membid'];
+                                final remarks = _remarkController.text;// Retrieve member ID
 
                                 // Update the global isFirst variable after submitting the order
-                                cartProvider.submitOrder(uniqueOrderId, tableNumber, memberId, context , isFirst);
+                                cartProvider.submitOrder(uniqueOrderId, tableNumber, memberId, context , isFirst , remarks);
                                 isFirst = false;
                               },
                               style: ButtonStyle(

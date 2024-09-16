@@ -1,8 +1,6 @@
 import 'package:enjoyfood/pages/ItemPage.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../Constants.dart';
-import 'dart:convert';
 
 class SizeConfig {
   double heightSize(BuildContext context, double value) {
@@ -18,31 +16,10 @@ class SizeConfig {
   }
 }
 
-class Newslist extends StatefulWidget {
-  @override
-  _NewslistState createState() => _NewslistState();
-}
+class AllList extends StatelessWidget {
+  final List<Map<String, dynamic>> menuItems;
 
-class _NewslistState extends State<Newslist> {
-  List<dynamic> menuItems = [];
-
-  @override
-  void initState() {
-    super.initState();
-    fetchMenuItems();
-  }
-
-  Future<void> fetchMenuItems() async {
-    final response = await http.get(Uri.parse('http://${AppConstants.apiBaseUrl}:3000/menuitems'));
-
-    if (response.statusCode == 200) {
-      setState(() {
-        menuItems = jsonDecode(response.body);
-      });
-    } else {
-      print('Failed to load menu items');
-    }
-  }
+  AllList({required this.menuItems});
 
   @override
   Widget build(BuildContext context) {
