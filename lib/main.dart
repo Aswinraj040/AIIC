@@ -1,4 +1,4 @@
-import 'package:enjoyfood/pages/home_page.dart';
+import 'package:enjoyfood/pages/admin_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:html' as html; // Import dart:html to access localStorage
@@ -10,6 +10,8 @@ import 'package:enjoyfood/widgets/cartProvider.dart';
 import 'screens/order_list_screen.dart';
 import 'screens/order_details_screen.dart';
 import 'screens/bill_screen.dart';
+import 'package:enjoyfood/pages/update_menu_screen.dart'; // Updated Import for Update Menu screen
+import 'package:enjoyfood/pages/add_menu_screen.dart'; // Updated Import for Add Menu screen
 
 void main() {
   runApp(
@@ -73,7 +75,7 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (context) => Homepage());
           case 'cartPage':
             return MaterialPageRoute(builder: (context) => CartPage());
-          case 'adminPage': // Add route for the admin page
+          case 'adminPage': // Route for the admin page
             return MaterialPageRoute(builder: (context) => MainScreen());
           default:
             return MaterialPageRoute(

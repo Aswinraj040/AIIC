@@ -1,3 +1,4 @@
+import 'package:enjoyfood/pages/adminhome.dart';
 import 'package:flutter/material.dart';
 import 'add_menu_screen.dart';
 import 'update_menu_screen.dart';
@@ -15,6 +16,7 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _children = [
+    const HomeScreen(),  // New Home Screen with Update GST button
     const AddMenuScreen(),
     const UpdateMenuScreen(),
   ];
@@ -45,6 +47,10 @@ class _MainScreenState extends State<MainScreen> {
         unselectedItemColor: Colors.white70,
         items: const [
           BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: "Home",
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.add),
             label: "Add Menu",
           ),
@@ -53,6 +59,27 @@ class _MainScreenState extends State<MainScreen> {
             label: "Update Menu",
           ),
         ],
+      ),
+    );
+  }
+}
+
+// New HomeScreen widget with "Update GST" button
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () {
+          // Navigate to AdminHome page when "Update GST" button is clicked
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) =>  AdminHome()),
+          );
+        },
+        child: const Text("Update GST"),
       ),
     );
   }
