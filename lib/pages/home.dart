@@ -1,7 +1,6 @@
-
-import 'dart:convert'; // Import for JSON decoding
-import 'package:flutter/material.dart'; // Import for Material components
-import 'package:http/http.dart' as http; // Import for HTTP requests
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:enjoyfood/widgets/appbarwidgets.dart';
 import 'package:enjoyfood/widgets/drawer.dart';
 import 'package:enjoyfood/widgets/alllist.dart';
@@ -33,17 +32,20 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
-  final String apiUrlCategories = 'http://localhost:3000/api/categories'; // Update with your actual API URL
-  final String apiUrlMenuItems = 'http://localhost:3000/menuitems/category'; // Update with your actual API URL for menu items
+  final String apiUrlCategories = 'http://localhost:3000/api/categories';
+  final String apiUrlMenuItems = 'http://localhost:3000/menuitems';
+  final String apiUrlSearch = 'http://localhost:3000/menuitems/search';
 
   List<String> categories = [];
   List<Map<String, dynamic>> menuItems = [];
   String? selectedCategory;
+  String searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _fetchCategories();
+    _fetchAllMenuItems(); // Fetch all items by default
   }
 
   Future<void> _fetchCategories() async {
@@ -52,7 +54,8 @@ class _HomepageState extends State<Homepage> {
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
-          categories = data.map((item) => item['name'] as String).toList();
+          categories = ['All Items']; // Add "All Items" category
+          categories.addAll(data.map((item) => item['name'] as String).toList());
         });
       } else {
         throw Exception('Failed to load categories');
@@ -62,17 +65,55 @@ class _HomepageState extends State<Homepage> {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchMenuItems(String category) async {
+  Future<void> _fetchAllMenuItems() async {
     try {
-      final response = await http.get(Uri.parse('$apiUrlMenuItems/$category'));
+      final response = await http.get(Uri.parse(apiUrlMenuItems));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => item as Map<String, dynamic>).toList();
+        setState(() {
+          menuItems = data.map((item) => item as Map<String, dynamic>).toList();
+        });
       } else {
         throw Exception('Failed to load menu items');
       }
     } catch (e) {
-      throw Exception('Failed to load menu items: $e');
+      print('Failed to load menu items: $e');
+    }
+  }
+
+  Future<void> _fetchMenuItemsByCategory(String category) async {
+    try {
+      if (category == 'All Items') {
+        _fetchAllMenuItems();
+      } else {
+        final response = await http.get(Uri.parse('$apiUrlMenuItems/category/$category'));
+        if (response.statusCode == 200) {
+          final List<dynamic> data = json.decode(response.body);
+          setState(() {
+            menuItems = data.map((item) => item as Map<String, dynamic>).toList();
+          });
+        } else {
+          throw Exception('Failed to load menu items by category');
+        }
+      }
+    } catch (e) {
+      print('Failed to load menu items: $e');
+    }
+  }
+
+  Future<void> _searchMenuItems(String query) async {
+    try {
+      final response = await http.get(Uri.parse('$apiUrlSearch?q=$query'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          menuItems = data.map((item) => item as Map<String, dynamic>).toList();
+        });
+      } else {
+        throw Exception('Failed to search menu items');
+      }
+    } catch (e) {
+      print('Failed to search menu items: $e');
     }
   }
 
@@ -88,20 +129,12 @@ class _HomepageState extends State<Homepage> {
               return ListTile(
                 leading: Icon(Icons.category),
                 title: Text(category),
-                onTap: () async {
+                onTap: () {
                   Navigator.pop(context); // Close the bottom sheet
                   setState(() {
                     selectedCategory = category;
                   });
-                  // Fetch menu items for the selected category
-                  try {
-                    final fetchedMenuItems = await _fetchMenuItems(category);
-                    setState(() {
-                      menuItems = fetchedMenuItems;
-                    });
-                  } catch (e) {
-                    print('Failed to load menu items: $e');
-                  }
+                  _fetchMenuItemsByCategory(category);
                 },
               );
             }).toList(),
@@ -111,6 +144,13 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
+  void _onSearchChanged(String query) {
+    setState(() {
+      searchQuery = query;
+      selectedCategory = null; // Clear category selection
+    });
+    _searchMenuItems(query); // Search as the user types
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,9 +162,14 @@ class _HomepageState extends State<Homepage> {
         body: ListView(
           children: [
             Appbarwidget(),
-            SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                onChanged: _onSearchChanged, // Search as user types
+                decoration: InputDecoration(
+                  labelText: 'Search food items',
+                  border: OutlineInputBorder(),
+                ),
               ),
             ),
             Padding(
@@ -150,7 +195,7 @@ class _HomepageState extends State<Homepage> {
                 ),
               ),
             ),
-            AllList(menuItems: menuItems), // Pass updated menu items here
+            AllList(menuItems: menuItems),
           ],
         ),
         drawer: Drawerwidget(),
@@ -190,3 +235,5 @@ class _HomepageState extends State<Homepage> {
     );
   }
 }
+
+
