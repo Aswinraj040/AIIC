@@ -1,3 +1,4 @@
+//cartProvider.dart
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../Constants.dart';
@@ -7,10 +8,12 @@ class CartProvider with ChangeNotifier {
   Map<String, Map<String, dynamic>> _itemDetails = {};
   Map<String, int> _items = {};
   String _remarks = "";
+
   String get remarks => _remarks;
   Map<String, int> get items => _items;
   Map<String, Map<String, dynamic>> get itemDetails => _itemDetails;
-  void setRemarks(String newRemarks){
+
+  void setRemarks(String newRemarks) {
     _remarks = newRemarks;
     notifyListeners();
   }
@@ -59,8 +62,46 @@ class CartProvider with ChangeNotifier {
     });
   }
 
+  // Fetch existing order on login
+  Future<void> fetchExistingOrder(String memberId) async {
+    final String url = 'http://${AppConstants.apiBaseUrl}:3000/orders/fetch-order';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'member_id': memberId}),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['orderExists']) {
+          loadOrderData(responseData['orderData']); // Load the order data into the cart
+        }
+      } else {
+        print('No existing order found for memberId: $memberId');
+      }
+    } catch (error) {
+      print('Error fetching existing order: $error');
+    }
+  }
+
+  // Load order data into cart
+  void loadOrderData(Map<String, dynamic> orderData) {
+    List items = orderData['items'];
+
+    for (var item in items) {
+      _items[item['menuItem']] = item['quantity'];
+      _itemDetails[item['menuItem']] = {
+        'price': item['individual_price'],
+        'name': item['menuItem'],
+      };
+    }
+    notifyListeners();
+  }
+
   Future<String?> checkOrderExistence(String memberId) async {
-    final String url = 'http://${AppConstants.apiBaseUrl}:3000/orders/check-order'; // Use correct route
+    final String url = 'http://${AppConstants.apiBaseUrl}:3000/orders/check-order';
 
     try {
       final response = await http.post(
@@ -81,8 +122,8 @@ class CartProvider with ChangeNotifier {
     return null; // No existing order found
   }
 
-  Future<void> submitOrder(String uniqueOrderId, String tableNumber, String? memberId, BuildContext context, bool isFirst , String? remarks) async {
-    if(isFirst){
+  Future<void> submitOrder(String uniqueOrderId, String tableNumber, String? memberId, BuildContext context, bool isFirst, String? remarks) async {
+    if (isFirst) {
       final String url = 'http://${AppConstants.apiBaseUrl}:3000/orders/create-order';
 
       List<Map<String, dynamic>> items = _items.entries.map((entry) {
@@ -102,7 +143,7 @@ class CartProvider with ChangeNotifier {
         'tableNumber': tableNumber,
         'member_id': memberId,
         'items': items,
-        'remarks' : remarks
+        'remarks': remarks
       };
 
       try {
@@ -137,8 +178,7 @@ class CartProvider with ChangeNotifier {
       } catch (error) {
         print('Error sending order: $error');
       }
-    }
-    else {
+    } else {
       final String url = 'http://${AppConstants.apiBaseUrl}:3000/orders/update-order';
       List<Map<String, dynamic>> items = _items.entries.map((entry) {
         String itemName = entry.key;
@@ -155,7 +195,7 @@ class CartProvider with ChangeNotifier {
       final updateData = {
         'member_id': memberId,
         'items': items,
-        'remarks' : remarks,
+        'remarks': remarks,
       };
 
       try {

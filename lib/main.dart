@@ -1,3 +1,4 @@
+//main.dart
 import 'package:enjoyfood/pages/adminpage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -37,6 +38,9 @@ class MyApp extends StatelessWidget {
       } else if (screen == '2') {
         initialScreen = OrderListScreen();
       } else if (screen == '3') {
+        // Fetch existing cart order for the user
+        Provider.of<CartProvider>(context, listen: false)
+            .fetchExistingOrder(membid!); // Fetch order here
         initialScreen = Homepage();
       } else {
         initialScreen = LoginPage();
