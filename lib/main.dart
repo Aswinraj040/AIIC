@@ -100,3 +100,14 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+void logout(BuildContext context) {
+  // Clear localStorage
+  html.window.localStorage.clear();
+
+  // Navigate to login page
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (context) => LoginPage()),
+        (Route<dynamic> route) => false, // Remove all routes to prevent back navigation
+  );
+}

@@ -1,8 +1,12 @@
+//order_list_screen.dart
 import 'package:flutter/material.dart';
 import '../models/order.dart';
 import '../services/api_service.dart';
 import '../widgets/order_card.dart';
-import 'dart:async'; // Import this to use Timer
+import 'dart:async';
+import 'dart:html' as html; // Import dart:html to access localStorage
+import 'package:enjoyfood/pages/login.dart'; // Import LoginPage
+import '../main.dart'; // Import the logout function
 
 class OrderListScreen extends StatefulWidget {
   @override
@@ -47,10 +51,21 @@ class _OrderListScreenState extends State<OrderListScreen> {
       appBar: AppBar(
         title: Text('Order List', style: TextStyle(color: Colors.white)),
         backgroundColor: Color(0xFF1b285b),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.logout,
+              color: Colors.white, // Set the icon color to white
+            ),
+            onPressed: () {
+              logout(context); // Call the logout function
+            },
+          ),
+        ],
       ),
       backgroundColor: Color(0xFF1b285b),
       body: RefreshIndicator(
-        onRefresh: _handleRefresh, // Use _handleRefresh for refreshing data
+        onRefresh: _handleRefresh,
         child: FutureBuilder<List<Order>>(
           future: _orders,
           builder: (context, snapshot) {
@@ -68,7 +83,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                   Order order = orders[index];
                   return OrderCard(
                     order: order,
-                    onOrderClosed: _handleRefresh, // Pass the method to refresh
+                    onOrderClosed: _handleRefresh,
                   );
                 },
               );
@@ -79,4 +94,3 @@ class _OrderListScreenState extends State<OrderListScreen> {
     );
   }
 }
-
