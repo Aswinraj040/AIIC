@@ -1,4 +1,3 @@
-//home.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -7,6 +6,7 @@ import 'package:enjoyfood/widgets/drawer.dart';
 import 'package:enjoyfood/widgets/alllist.dart';
 import 'package:enjoyfood/widgets/popularlist.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:enjoyfood/widgets/todayspecialslist.dart';
 
 class SizeConfig {
   double heightSize(BuildContext context, double value) {
@@ -188,7 +188,19 @@ class _HomepageState extends State<Homepage> {
             Padding(
               padding: EdgeInsets.only(top: 20, left: 10),
               child: Text(
-                "All items",
+                "Today's special",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: SizeConfig().fontSize(context, 3.0),
+                  color: Color(0xFF1B285B),
+                ),
+              ),
+            ),
+            TodaysSpecialsList(),  // New widget here
+            Padding(
+              padding: EdgeInsets.only(top: 20, left: 10),
+              child: Text(
+                "All Items",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: SizeConfig().fontSize(context, 3.0),
@@ -236,5 +248,8 @@ class _HomepageState extends State<Homepage> {
     );
   }
 }
+
+
+
 
 
